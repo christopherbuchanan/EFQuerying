@@ -48,6 +48,10 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        throw new NotImplementedException("Retrieve a list of all order details, with customer name and email.");
+        orderDetails = await DbContext.OrderDetails
+            .Include(d => d.Order)
+            .ThenInclude(o => o.Customer)
+            .Include(d => d.Product)
+            .ToListAsync();
     }
 }  

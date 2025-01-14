@@ -1,7 +1,8 @@
-﻿@page "/unpopularproducts"
+﻿@page "/products"
+@using Microsoft.EntityFrameworkCore
 @inject RetailContext DbContext
 
-<h2>Unpopular Products List</h2>
+<h2>Products List</h2>
 
 @if (products == null)
 {
@@ -41,6 +42,6 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        throw new NotImplementedException("Retrieve a list of all products that have never been ordered.");
+        products = await DbContext.Products.ToListAsync();
     }
 }  

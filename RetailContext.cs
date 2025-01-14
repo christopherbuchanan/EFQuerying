@@ -109,6 +109,24 @@ public class RetailContext : DbContext
                 UnitPrice = 1200
             });
 
+            context.Add(new OrderDetail
+            {
+                OrderDetailID = 3,
+                OrderID = 2,
+                ProductID = 3,
+                Quantity = 10,
+                UnitPrice = 1200
+            });
+
+            context.Add(new OrderDetail
+            {
+                OrderDetailID = 4,
+                OrderID = 2,
+                ProductID = 2,
+                Quantity = 1,
+                UnitPrice = 20
+            });
+
             context.SaveChanges();
         });
     }
