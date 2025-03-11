@@ -1,0 +1,49 @@
+﻿@page "/orders"
+@using Microsoft.EntityFrameworkCore
+@inject RetailContext DbContext
+
+<h2>Orders</h2>
+
+@if (orders == null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (orders.Count == 0)
+{
+    <p>No orders found.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Order ID</th>
+                <th>Customer Name</th>
+                <th>Order Date</th>
+                <th>Total Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var order in orders)
+            {
+                <tr>
+                    <td>@order.OrderID</td>
+                    <td>@order.Customer.Name</td>
+                    <td>@order.OrderDate.ToString("d")</td>
+                    <td>@order.TotalAmount.ToString("C")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<Order> orders;
+
+    protected override async Task OnInitializedAsync()
+    {
+        orders = await DbContext.Orders
+            .Include(o => o.Customer)
+            .ToListAsync();
+    }
+}
