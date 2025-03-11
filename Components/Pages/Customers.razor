@@ -1,4 +1,5 @@
 ﻿@page "/customers"
+@using Microsoft.EntityFrameworkCore
 
 @inject RetailContext DbContext
 
@@ -42,6 +43,6 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        throw new NotImplementedException("Retrieve a list of all customers who registered in the last 10 days.");
+        customers = await DbContext.Customers.ToListAsync();
     }
 }  
