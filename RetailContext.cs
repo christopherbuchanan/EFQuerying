@@ -8,6 +8,8 @@ public class RetailContext : DbContext
     public DbSet<Customer> Customers { get; set; }
 
     public DbSet<Order> Orders { get; set; }
+    public DbSet<ExpeditedOrder> ExpeditedOrders { get; set; }
+    public DbSet<NextDayOrder> NextDayOrders { get; set; }
 
     public DbSet<Product> Products { get; set; }
 
@@ -16,115 +18,115 @@ public class RetailContext : DbContext
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         // Replace with your actual connection string  
-        optionsBuilder.UseSqlite("Data Source=retail.db", x => x.MigrationsAssembly("EFQuerying"))
+        //optionsBuilder.UseSqlite("Data Source=retail.db", x => x.MigrationsAssembly("EFQuerying"))
+        //    .EnableSensitiveDataLogging()
+        //    .LogTo(Console.WriteLine, LogLevel.Information);
+
+        optionsBuilder.UseSqlServer("Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=EFQuerying", x => x.MigrationsAssembly("EFQuerying"))
             .EnableSensitiveDataLogging()
             .LogTo(Console.WriteLine, LogLevel.Information);
+
         optionsBuilder.ConfigureWarnings(warnings => warnings.Ignore(RelationalEventId.PendingModelChangesWarning));
         optionsBuilder.UseSeeding((context, _) =>
         {
-            context.Add(
-                new Customer
-                {
-                    CustomerID = 1,
-                    Name = "John Doe",
-                    Email = "johndoe@email.com",
-                    RegistrationDate = DateTime.Now.AddDays(-30)
-                });
-            context.Add(new Customer
-            {
-                CustomerID = 2,
-                Name = "Jane Doe",
-                Email = "jane@gmail.com",
-                RegistrationDate = DateTime.Now.AddDays(-3)
-            });
+            context.Add(SeedCustomers.JohnDoe);
+            context.Add(SeedCustomers.JaneDoe);
 
             context.Add(new Product
             {
-                ProductID = 1,
                 Name = "Laptop",
                 Price = 1200,
                 Category = "Electronics"
             });
-            context.Add(new Product
+            var mouse = new Product
             {
-                ProductID = 2,
                 Name = "Mouse",
                 Price = 20,
                 Category = "Accessories"
-            });
-            context.Add(new Product
+            };
+            var keyboard = new Product
             {
-                ProductID = 3,
                 Name = "Keyboard",
                 Price = 50,
                 Category = "Accessories"
-            });
-            context.Add(new Product
+            };
+            var monitor = new Product
             {
-                ProductID = 4,
                 Name = "Monitor",
                 Price = 300,
                 Category = "Electronics"
-            });
+            };
 
-            context.Add(new Order
+            var order1 = new Order
             {
-                OrderID = 1,
-                CustomerID = 1,
+                Customer = SeedCustomers.JohnDoe,
                 OrderDate = DateTime.Now.AddDays(-10),
                 TotalAmount = 1200
-            });
-
-            context.Add(new Order
+            };
+            var order2 = new Order
             {
-                OrderID = 2,
-                CustomerID = 1,
+                Customer = SeedCustomers.JohnDoe,
                 OrderDate = DateTime.Now.AddDays(-5),
                 TotalAmount = 320
-            });
-
-            context.Add(new Order
+            };
+            var order3 = new Order
             {
-                OrderID = 3,
-                CustomerID = 2,
+                Customer = SeedCustomers.JaneDoe,
                 OrderDate = DateTime.Now.AddDays(-2),
                 TotalAmount = 50
-            });
+            };
+            context.Add(order1);
+            context.Add(order2);
+            context.Add(order3);
 
             context.Add(new OrderDetail
             {
-                OrderDetailID = 1,
-                OrderID = 1,
-                ProductID = 1,
+                Order = order1,
+                Product = mouse,
                 Quantity = 1,
                 UnitPrice = 1200
             });
 
             context.Add(new OrderDetail
             {
-                OrderDetailID = 2,
-                OrderID = 2,
-                ProductID = 3,
+                Order = order2,
+                Product = monitor,
                 Quantity = 10,
                 UnitPrice = 1200
             });
 
             context.Add(new OrderDetail
             {
-                OrderDetailID = 3,
-                OrderID = 2,
-                ProductID = 3,
+                Order = order2,
+                Product = keyboard,
                 Quantity = 10,
                 UnitPrice = 1200
             });
 
             context.Add(new OrderDetail
             {
-                OrderDetailID = 4,
-                OrderID = 2,
-                ProductID = 2,
+                Order = order3,
+                Product = mouse,
                 Quantity = 1,
                 UnitPrice = 20
+            });
+
+            context.Add(new ExpeditedOrder
+            {
+                Customer = SeedCustomers.JaneDoe,
+                OrderDate = DateTime.Now.AddDays(-2),
+                TotalAmount = 50,
+                DaysToDeliver = 2,
+                ShippingMethod = "Post Office"
+            });
+
+            context.Add(new NextDayOrder
+            {
+                Customer = SeedCustomers.JaneDoe,
+                OrderDate = DateTime.Now,
+                TotalAmount = 500,
+                ShippingMethod = "Super Fast Courier",
+                AdditionalCharge = 10
             });
 
             context.SaveChanges();
@@ -138,8 +140,6 @@ public class RetailContext : DbContext
         modelBuilder.Entity<Order>().HasKey(o => o.OrderID);
         modelBuilder.Entity<Product>().HasKey(p => p.ProductID);
         modelBuilder.Entity<OrderDetail>().HasKey(od => od.OrderDetailID);
-
-        // Configure relationships  
 
         // Customer has many Orders  
         modelBuilder.Entity<Order>()
@@ -174,4 +174,19 @@ public class RetailContext : DbContext
             .Property(od => od.UnitPrice)
             .HasColumnType("decimal(18,2)");
     }
+}
+
+public static class SeedCustomers
+{
+    public static Customer JaneDoe => new()
+    {
+        Name = "Jane Doe",
+        Email = ""
+    };
+    public static Customer JohnDoe => new()
+    {
+        Name = "John Doe",
+        Email = "johndoe@email.com",
+        RegistrationDate = DateTime.Now.AddDays(-30)
+    };
 }

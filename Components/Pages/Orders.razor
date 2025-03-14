@@ -1,49 +1,106 @@
-﻿@page "/orders"
-@using Microsoft.EntityFrameworkCore
-@inject RetailContext DbContext
+﻿@page "/orders"  
+@using Microsoft.EntityFrameworkCore  
+@inject RetailContext DbContext  
+@rendermode InteractiveServer
 
-<h2>Orders</h2>
+<h2>Orders</h2>  
 
-@if (orders == null)
+<select class="select-element" @onchange="SelectChanged">
+    @foreach (var option in options)
+    {
+        <option value="@option.className">@option.optionText</option>
+    }
+</select>
+
+@if (orders == null)  
+{  
+    <p><em>Loading...</em></p>  
+}  
+else if (orders.Count == 0)  
+{  
+    <p>No orders found.</p>  
+}  
+else  
 {
-    <p><em>Loading...</em></p>
-}
-else if (orders.Count == 0)
-{
-    <p>No orders found.</p>
-}
-else
-{
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Order ID</th>
-                <th>Customer Name</th>
-                <th>Order Date</th>
-                <th>Total Amount</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var order in orders)
-            {
-                <tr>
-                    <td>@order.OrderID</td>
-                    <td>@order.Customer.Name</td>
-                    <td>@order.OrderDate.ToString("d")</td>
-                    <td>@order.TotalAmount.ToString("C")</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
+    <table class="table">  
+        <thead>  
+            <tr>  
+                <th>Order ID</th>  
+                <th>Customer Name</th>  
+                <th>Order Date</th>  
+                <th>Total Amount</th>  
+                <th>Shipping Method</th>  
+                <th>Days To Deliver</th>  
+                <th>Additional Charge</th>  
+            </tr>  
+        </thead>  
+        <tbody>  
+            @foreach (var order in orders)  
+            {  
+                <tr>  
+                    <td>@order.OrderID</td>  
+                    <td>@order.CustomerName</td>  
+                    <td>@order.OrderDate.ToString("d")</td>  
+                    <td>@order.TotalAmount.ToString("C")</td>  
+                    <td>@order.ShippingMethod</td>  
+                    <td>@order.DaysToDeliver</td>  
+                    <td>@order.AdditionalCharge</td>  
+                </tr>  
+            }  
+        </tbody>  
+    </table>  
+}  
 
 @code {
-    private List<Order> orders;
-
-    protected override async Task OnInitializedAsync()
+    private List<OrderViewModel> orders =[];
+    public string selectedOrderType = string.Empty; 
+    public List<(string className, string optionText)> options = [ (nameof(Order), $"{nameof(Order)}s"), (nameof(ExpeditedOrder), "Expedited Orders"), (nameof(NextDayOrder), "Next Day Orders") ];
+    protected override async Task OnInitializedAsync()  
     {
-        orders = await DbContext.Orders
-            .Include(o => o.Customer)
-            .ToListAsync();
+        selectedOrderType = options.First().className;
+        await LoadOrders();  
     }
+
+    public async Task SelectChanged(ChangeEventArgs args) {
+        selectedOrderType = args.Value.ToString();
+        await LoadOrders();
+    }
+
+    private async Task LoadOrders()  
+    {  
+        IQueryable<Order> query = selectedOrderType switch  
+        {  
+            nameof(NextDayOrder) => DbContext.NextDayOrders,
+            nameof(ExpeditedOrder) => DbContext.ExpeditedOrders,
+            _ => DbContext.Orders,  
+        };  
+
+        var result = await query  
+            .Include(o => o.Customer)  
+            .ToListAsync();
+
+        orders = result.Select(x => new OrderViewModel
+            {
+                OrderID = x.OrderID,
+                CustomerID = x.CustomerID,
+                OrderDate = x.OrderDate,
+                TotalAmount = x.TotalAmount,
+                CustomerName = x.Customer.Name,
+                ShippingMethod = x is ExpeditedOrder eo ? eo.ShippingMethod : null,
+                DaysToDeliver = x is ExpeditedOrder eoDtd ? eoDtd.DaysToDeliver : null,
+                AdditionalCharge = x is NextDayOrder ndo ? ndo.AdditionalCharge : null
+            }).ToList();
+   }  
+
+   public class OrderViewModel  
+   {  
+       public int OrderID { get; set; }  
+       public int CustomerID { get; set; }  
+       public DateTime OrderDate { get; set; }  
+       public decimal TotalAmount { get; set; }  
+       public string? CustomerName { get; set; }  
+       public string? ShippingMethod { get; set; }  
+       public int? DaysToDeliver { get; set; }  
+       public int? AdditionalCharge { get; set; }  
+   }  
 }
